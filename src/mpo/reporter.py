@@ -99,7 +99,23 @@ class Reporter:
                 "ratings": ratings,
             }
 
-        class_stats = {}
+        class_stats: dict[str, dict] = {}
+
+        if expected_students:
+            all_classes = {es.klass or "未分班" for es in expected_students}
+            for klass in all_classes:
+                class_stats[klass] = {
+                    "total_records": 0,
+                    "student_count": 0,
+                    "total_minutes": 0.0,
+                    "pieces": [],
+                    "graded_count": 0,
+                    "passed_count": 0,
+                    "completion_rate": 0.0,
+                    "expected_count": 0,
+                    "missing_count": 0,
+                }
+
         for klass, recs in by_class.items():
             class_students = {
                 self._student_key(r.student)
@@ -109,17 +125,27 @@ class Reporter:
             pieces = {r.piece for r in recs if r.piece}
             graded = sum(1 for r in recs if r.rating or r.passed is not None or r.comment)
             passed = sum(1 for r in recs if r.passed is True)
-            class_stats[klass] = {
-                "total_records": len(recs),
-                "student_count": len(class_students),
-                "total_minutes": round(total_duration / 60, 1),
-                "pieces": sorted(pieces),
-                "graded_count": graded,
-                "passed_count": passed,
-                "completion_rate": 0.0,
-                "expected_count": 0,
-                "missing_count": 0,
-            }
+            if klass in class_stats:
+                class_stats[klass].update({
+                    "total_records": len(recs),
+                    "student_count": len(class_students),
+                    "total_minutes": round(total_duration / 60, 1),
+                    "pieces": sorted(pieces),
+                    "graded_count": graded,
+                    "passed_count": passed,
+                })
+            else:
+                class_stats[klass] = {
+                    "total_records": len(recs),
+                    "student_count": len(class_students),
+                    "total_minutes": round(total_duration / 60, 1),
+                    "pieces": sorted(pieces),
+                    "graded_count": graded,
+                    "passed_count": passed,
+                    "completion_rate": 0.0,
+                    "expected_count": 0,
+                    "missing_count": 0,
+                }
 
         missing = []
         missing_by_class: dict[str, list[dict]] = defaultdict(list)
@@ -193,12 +219,14 @@ class Reporter:
             return {"granularity": granularity, "periods": {}}
 
         expected_by_class: dict[str, list[StudentInfo]] = defaultdict(list)
+        all_expected_classes: set[str] = set()
         if expected_students:
             for es in expected_students:
-                expected_by_class[es.klass or "未分班"].append(es)
+                klass = es.klass or "未分班"
+                expected_by_class[klass].append(es)
+                all_expected_classes.add(klass)
 
         period_stats: dict[str, dict] = {}
-        all_classes: set[str] = set()
 
         for period, precs in periods.items():
             by_student_in_period: dict[tuple, StudentInfo] = {}
@@ -212,14 +240,16 @@ class Reporter:
                     by_student_in_period[key] = r.student
                     klass = r.student.klass or "未分班"
                     by_class_in_period[klass].append(r)
-                    all_classes.add(klass)
                 if r.rating or r.passed is not None or r.comment:
                     graded += 1
                 if r.passed is True:
                     passed += 1
 
+            all_period_classes = set(all_expected_classes)
+            all_period_classes.update(by_class_in_period.keys())
+
             class_data: dict[str, dict] = {}
-            for klass in sorted(all_classes):
+            for klass in sorted(all_period_classes):
                 class_recs = by_class_in_period.get(klass, [])
                 class_submitted_students: set[tuple] = {
                     self._student_key(r.student)
@@ -343,9 +373,12 @@ class Reporter:
     def write_trend_csv(
         self,
         trend: dict,
-        filename: str = "trend_summary.csv",
+        filename: Optional[str] = None,
     ) -> Path:
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        granularity = trend.get("granularity", "week")
+        if not filename:
+            filename = f"trend_summary_{granularity}.csv"
         path = self.output_dir / filename
 
         with open(path, "w", newline="", encoding="utf-8-sig") as f:
@@ -376,8 +409,7 @@ class Reporter:
         progress: dict,
         groups: dict,
         filename: str = "progress_report.md",
-        trend: Optional[dict] = None,
-        trend_granularity: str = "week",
+        trends: Optional[list[dict]] = None,
     ) -> Path:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         path = self.output_dir / filename
@@ -416,39 +448,43 @@ class Reporter:
             )
         lines.append("")
 
-        if trend and trend.get("periods"):
-            period_label = "周" if trend_granularity == "week" else "月"
-            lines.append(f"## 按{period_label}趋势")
-            lines.append("")
-            for period in trend.get("period_order", []):
-                ps = trend["periods"][period]
-                lines.append(f"### {period_label}度：{period}")
+        if trends:
+            for trend in trends:
+                granularity = trend.get("granularity", "week")
+                if not trend.get("periods"):
+                    continue
+                period_label = "周" if granularity == "week" else "月"
+                lines.append(f"## 按{period_label}趋势")
                 lines.append("")
-                comp = ps.get("compared_to_previous")
-                if comp:
-                    lines.append(
-                        f"环比：录音数 {comp['records_delta']:+d}，"
-                        f"提交人数 {comp['students_delta']:+d}，"
-                        f"已批改 {comp['graded_delta']:+d}，"
-                        f"通过 {comp['passed_delta']:+d}"
-                    )
+                for period in trend.get("period_order", []):
+                    ps = trend["periods"][period]
+                    lines.append(f"### {period_label}度：{period}")
                     lines.append("")
-                lines.append("| 班级 | 录音数 | 提交/应提交 | 完成率 | 已批改 | 通过数 | 通过率 | 缺交 | 环比 |")
-                lines.append("|------|--------|-------------|--------|--------|--------|--------|------|------|")
-                for klass, cd in ps["class_data"].items():
-                    delta = cd.get("compared_to_previous", {})
-                    submit_delta = delta.get("submitted_delta", 0)
-                    trend_str = f"提交{submit_delta:+d}"
-                    if "pass_rate_delta" in delta:
-                        trend_str += f" 通过率{delta['pass_rate_delta']:+.1f}%"
-                    lines.append(
-                        f"| {klass} | {cd['total_records']} | "
-                        f"{cd['submitted_students']}/{cd['expected_students']} | "
-                        f"{cd['completion_rate']}% | {cd['graded_count']} | "
-                        f"{cd['passed_count']} | {cd['pass_rate']}% | "
-                        f"{cd['missing_students']} | {trend_str} |"
-                    )
-                lines.append("")
+                    comp = ps.get("compared_to_previous")
+                    if comp:
+                        lines.append(
+                            f"环比：录音数 {comp['records_delta']:+d}，"
+                            f"提交人数 {comp['students_delta']:+d}，"
+                            f"已批改 {comp['graded_delta']:+d}，"
+                            f"通过 {comp['passed_delta']:+d}"
+                        )
+                        lines.append("")
+                    lines.append("| 班级 | 录音数 | 提交/应提交 | 完成率 | 已批改 | 通过数 | 通过率 | 缺交 | 环比 |")
+                    lines.append("|------|--------|-------------|--------|--------|--------|--------|------|------|")
+                    for klass, cd in ps["class_data"].items():
+                        delta = cd.get("compared_to_previous", {})
+                        submit_delta = delta.get("submitted_delta", 0)
+                        trend_str = f"提交{submit_delta:+d}"
+                        if "pass_rate_delta" in delta:
+                            trend_str += f" 通过率{delta['pass_rate_delta']:+.1f}%"
+                        lines.append(
+                            f"| {klass} | {cd['total_records']} | "
+                            f"{cd['submitted_students']}/{cd['expected_students']} | "
+                            f"{cd['completion_rate']}% | {cd['graded_count']} | "
+                            f"{cd['passed_count']} | {cd['pass_rate']}% | "
+                            f"{cd['missing_students']} | {trend_str} |"
+                        )
+                    lines.append("")
 
         if progress["missing_students"]:
             lines.append("## 缺交名单（按班级）")

@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "updated_at": "2026-06-19T07:16:03",
+  "updated_at": "2026-06-19T07:33:17",
   "records": {
     "钢琴一班|张三|2025-06-15|奏鸣曲|76af9756": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "76af9756663e97313a7ba15acea16068",
@@ -13,10 +13,10 @@
       "piece": "奏鸣曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴一班\\张三_S001\\2025-06-15_张三_奏鸣曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴一班|张三|2025-06-15|练习曲|886ae526": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "886ae5266b6b4640ce1f5c7b75f336cc",
@@ -26,10 +26,10 @@
       "piece": "练习曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴一班\\张三_S001\\2025-06-15_张三_练习曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴一班|张三|2025-06-15|奏鸣曲|e9238278": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "e9238278de4e1f0347ab29fdf4ccd9f7",
@@ -39,10 +39,10 @@
       "piece": "奏鸣曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴一班\\张三_S002\\2025-06-15_张三_奏鸣曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴一班|张三|2025-06-15|练习曲|79256925": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "792569254901ae05fb4846ca4b4bf733",
@@ -52,10 +52,10 @@
       "piece": "练习曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴一班\\张三_S002\\2025-06-15_张三_练习曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴一班|李四|2025-06-15|奏鸣曲|02574140": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "025741406092bda526e3aa946289ddcf",
@@ -65,10 +65,10 @@
       "piece": "奏鸣曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴一班\\李四_S003\\2025-06-15_李四_奏鸣曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴一班|李四|2025-06-15|练习曲|886ae526": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "886ae5266b6b4640ce1f5c7b75f336cc",
@@ -78,10 +78,10 @@
       "piece": "练习曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴一班\\李四_S003\\2025-06-15_李四_练习曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴二班|张三|2025-06-15|奏鸣曲|28b1fe5a": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "28b1fe5acd367f307d66f0e1b289087b",
@@ -91,10 +91,10 @@
       "piece": "奏鸣曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴二班\\张三_S004\\2025-06-15_张三_奏鸣曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴二班|张三|2025-06-15|练习曲|bf534f6f": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "bf534f6f595d9052ed16f80acf53de4f",
@@ -104,10 +104,10 @@
       "piece": "练习曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴二班\\张三_S004\\2025-06-15_张三_练习曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴二班|王五|2025-06-15|奏鸣曲|6db8e0b4": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "6db8e0b4cbb69914555435bd37d5018f",
@@ -117,10 +117,10 @@
       "piece": "奏鸣曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴二班\\王五_S005\\2025-06-15_王五_奏鸣曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     },
     "钢琴二班|王五|2025-06-15|练习曲|45ccec69": {
-      "comment": "6月15日作业，认真完成！",
+      "comment": "6月15日作业批改",
       "rating": "优",
       "passed": true,
       "file_hash": "45ccec69de57d6937295d9c628bcf19f",
@@ -130,7 +130,7 @@
       "piece": "练习曲",
       "practice_date": "2025-06-15",
       "source_file": "test_data\\钢琴二班\\王五_S005\\2025-06-15_王五_练习曲.wav",
-      "graded_at": "2026-06-19T07:16:03"
+      "graded_at": "2026-06-19T07:33:17"
     }
   }
 }

@@ -101,7 +101,12 @@ class GradingStore:
                         or not r.student.student_id
                         or cand["student_id"] == r.student.student_id
                     )
-                    if klass_match and name_match and student_id_match:
+                    date_match = (
+                        not cand.get("practice_date")
+                        or not r.date_str
+                        or cand["practice_date"] == r.date_str
+                    )
+                    if klass_match and name_match and student_id_match and date_match:
                         data = cand
                         break
             if data:
@@ -164,12 +169,22 @@ class GradingStore:
                 continue
             records.append((key, v))
 
-        records.sort(key=lambda kv: (
-            kv[1].get("klass", ""),
-            kv[1].get("student", ""),
-            kv[1].get("practice_date", ""),
-            kv[1].get("graded_at", ""),
-        ))
+        if klass or student:
+            records.sort(key=lambda kv: (
+                kv[1].get("practice_date", ""),
+                kv[1].get("graded_at", ""),
+                kv[1].get("klass", ""),
+                kv[1].get("student", ""),
+                kv[1].get("student_id", ""),
+            ))
+        else:
+            records.sort(key=lambda kv: (
+                kv[1].get("klass", ""),
+                kv[1].get("student", ""),
+                kv[1].get("student_id", ""),
+                kv[1].get("practice_date", ""),
+                kv[1].get("graded_at", ""),
+            ))
 
         if fmt == "json":
             filename = "grading_history"

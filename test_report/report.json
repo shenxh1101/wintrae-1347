@@ -1,12 +1,12 @@
 {
   "progress": {
-    "generated_at": "2026-06-19T07:18:17",
+    "generated_at": "2026-06-19T07:33:57",
     "total_records": 20,
     "total_students": 5,
     "total_pieces": 2,
-    "total_classes": 2,
-    "graded_total": 11,
-    "passed_total": 11,
+    "total_classes": 3,
+    "graded_total": 10,
+    "passed_total": 10,
     "date_range": {
       "start": "2025-06-15",
       "end": "2025-06-16"
@@ -91,14 +91,28 @@
           "练习曲"
         ],
         "last_date": "2025-06-16T00:00:00",
-        "graded_count": 3,
-        "passed_count": 3,
+        "graded_count": 2,
+        "passed_count": 2,
         "ratings": [
           "优"
         ]
       }
     },
     "class_stats": {
+      "钢琴二班": {
+        "total_records": 8,
+        "student_count": 2,
+        "total_minutes": 11.8,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "graded_count": 4,
+        "passed_count": 4,
+        "completion_rate": 100.0,
+        "expected_count": 2,
+        "missing_count": 0
+      },
       "钢琴一班": {
         "total_records": 12,
         "student_count": 3,
@@ -113,27 +127,48 @@
         "expected_count": 3,
         "missing_count": 0
       },
-      "钢琴二班": {
-        "total_records": 8,
-        "student_count": 2,
-        "total_minutes": 11.8,
-        "pieces": [
-          "奏鸣曲",
-          "练习曲"
-        ],
-        "graded_count": 5,
-        "passed_count": 5,
-        "completion_rate": 100.0,
+      "钢琴三班": {
+        "total_records": 0,
+        "student_count": 0,
+        "total_minutes": 0.0,
+        "pieces": [],
+        "graded_count": 0,
+        "passed_count": 0,
+        "completion_rate": 0.0,
         "expected_count": 2,
-        "missing_count": 0
+        "missing_count": 2
       }
     },
     "pieces": [
       "奏鸣曲",
       "练习曲"
     ],
-    "missing_students": [],
-    "missing_by_class": {}
+    "missing_students": [
+      {
+        "name": "赵六",
+        "klass": "钢琴三班",
+        "student_id": "S006"
+      },
+      {
+        "name": "钱七",
+        "klass": "钢琴三班",
+        "student_id": "S007"
+      }
+    ],
+    "missing_by_class": {
+      "钢琴三班": [
+        {
+          "name": "赵六",
+          "klass": "钢琴三班",
+          "student_id": "S006"
+        },
+        {
+          "name": "钱七",
+          "klass": "钢琴三班",
+          "student_id": "S007"
+        }
+      ]
+    }
   },
   "groups": {
     "钢琴一班": [
@@ -161,87 +196,115 @@
       "test_data\\钢琴二班\\王五_S005\\2025-06-16_王五_练习曲.wav"
     ]
   },
-  "trend": {
-    "granularity": "week",
-    "periods": {
-      "2025-06-09周": {
-        "total_records": 10,
-        "submitted_students": 5,
-        "graded_count": 10,
-        "passed_count": 10,
-        "class_data": {
-          "钢琴一班": {
-            "total_records": 6,
-            "submitted_students": 3,
-            "expected_students": 3,
-            "missing_students": 0,
-            "graded_count": 6,
-            "passed_count": 6,
-            "completion_rate": 100.0,
-            "pass_rate": 100.0
-          },
-          "钢琴二班": {
-            "total_records": 4,
-            "submitted_students": 2,
-            "expected_students": 2,
-            "missing_students": 0,
-            "graded_count": 4,
-            "passed_count": 4,
-            "completion_rate": 100.0,
-            "pass_rate": 100.0
-          }
-        }
-      },
-      "2025-06-16周": {
-        "total_records": 10,
-        "submitted_students": 5,
-        "graded_count": 1,
-        "passed_count": 1,
-        "class_data": {
-          "钢琴一班": {
-            "total_records": 6,
-            "submitted_students": 3,
-            "expected_students": 3,
-            "missing_students": 0,
-            "graded_count": 0,
-            "passed_count": 0,
-            "completion_rate": 100.0,
-            "pass_rate": 0.0,
-            "compared_to_previous": {
-              "submitted_delta": 0,
-              "missing_delta": 0,
-              "graded_delta": -6,
-              "pass_rate_delta": -100.0
-            }
-          },
-          "钢琴二班": {
-            "total_records": 4,
-            "submitted_students": 2,
-            "expected_students": 2,
-            "missing_students": 0,
-            "graded_count": 1,
-            "passed_count": 1,
-            "completion_rate": 100.0,
-            "pass_rate": 100.0,
-            "compared_to_previous": {
-              "submitted_delta": 0,
-              "missing_delta": 0,
-              "graded_delta": -3,
-              "pass_rate_delta": 0.0
+  "trends": [
+    {
+      "granularity": "week",
+      "periods": {
+        "2025-06-09周": {
+          "total_records": 10,
+          "submitted_students": 5,
+          "graded_count": 10,
+          "passed_count": 10,
+          "class_data": {
+            "钢琴一班": {
+              "total_records": 6,
+              "submitted_students": 3,
+              "expected_students": 3,
+              "missing_students": 0,
+              "graded_count": 6,
+              "passed_count": 6,
+              "completion_rate": 100.0,
+              "pass_rate": 100.0
+            },
+            "钢琴三班": {
+              "total_records": 0,
+              "submitted_students": 0,
+              "expected_students": 2,
+              "missing_students": 2,
+              "graded_count": 0,
+              "passed_count": 0,
+              "completion_rate": 0.0,
+              "pass_rate": 0.0
+            },
+            "钢琴二班": {
+              "total_records": 4,
+              "submitted_students": 2,
+              "expected_students": 2,
+              "missing_students": 0,
+              "graded_count": 4,
+              "passed_count": 4,
+              "completion_rate": 100.0,
+              "pass_rate": 100.0
             }
           }
         },
-        "compared_to_previous": {
-          "records_delta": 0,
-          "students_delta": 0,
-          "graded_delta": -9,
-          "passed_delta": -9
+        "2025-06-16周": {
+          "total_records": 10,
+          "submitted_students": 5,
+          "graded_count": 0,
+          "passed_count": 0,
+          "class_data": {
+            "钢琴一班": {
+              "total_records": 6,
+              "submitted_students": 3,
+              "expected_students": 3,
+              "missing_students": 0,
+              "graded_count": 0,
+              "passed_count": 0,
+              "completion_rate": 100.0,
+              "pass_rate": 0.0,
+              "compared_to_previous": {
+                "submitted_delta": 0,
+                "missing_delta": 0,
+                "graded_delta": -6,
+                "pass_rate_delta": -100.0
+              }
+            },
+            "钢琴三班": {
+              "total_records": 0,
+              "submitted_students": 0,
+              "expected_students": 2,
+              "missing_students": 2,
+              "graded_count": 0,
+              "passed_count": 0,
+              "completion_rate": 0.0,
+              "pass_rate": 0.0,
+              "compared_to_previous": {
+                "submitted_delta": 0,
+                "missing_delta": 0,
+                "graded_delta": 0,
+                "pass_rate_delta": 0.0
+              }
+            },
+            "钢琴二班": {
+              "total_records": 4,
+              "submitted_students": 2,
+              "expected_students": 2,
+              "missing_students": 0,
+              "graded_count": 0,
+              "passed_count": 0,
+              "completion_rate": 100.0,
+              "pass_rate": 0.0,
+              "compared_to_previous": {
+                "submitted_delta": 0,
+                "missing_delta": 0,
+                "graded_delta": -4,
+                "pass_rate_delta": -100.0
+              }
+            }
+          },
+          "compared_to_previous": {
+            "records_delta": 0,
+            "students_delta": 0,
+            "graded_delta": -10,
+            "passed_delta": -10
+          }
         }
-      }
-    },
-    "period_order": [
-      "2025-06-09周",
-      "2025-06-16周"
-    ]
-  }
+      },
+      "period_order": [
+        "2025-06-09周",
+        "2025-06-16周"
+      ]
+    }
+  ]
 }

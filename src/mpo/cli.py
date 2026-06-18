@@ -325,8 +325,8 @@ def check_cmd(
 @click.option("--format", "fmt", type=click.Choice(["all", "csv", "json", "markdown"]),
               default="all", show_default=True, help="输出格式")
 @click.option("--trend/--no-trend", default=False, help="是否生成周/月趋势报告")
-@click.option("--trend-granularity", type=click.Choice(["week", "month"]),
-              default="week", show_default=True, help="趋势统计粒度")
+@click.option("--trend-granularity", type=click.Choice(["week", "month", "both"]),
+              default="both", show_default=True, help="趋势统计粒度")
 @click.option("--save-grading", is_flag=True, help="将本次识别/批改信息保存到批改记录文件")
 @click.pass_context
 def report_cmd(
@@ -361,28 +361,34 @@ def report_cmd(
     groups = reporter.generate_practice_list(records, group_by=group_by)
     progress = reporter.generate_progress_report(records, expected_students)
 
-    trend_data = None
+    trend_datas: list[dict] = []
     if trend:
-        trend_data = reporter.generate_trend_report(
-            records, expected_students, granularity=trend_granularity
-        )
+        granularities = []
+        if trend_granularity == "both":
+            granularities = ["week", "month"]
+        else:
+            granularities = [trend_granularity]
+        for g in granularities:
+            trend_datas.append(
+                reporter.generate_trend_report(records, expected_students, granularity=g)
+            )
 
     outputs = []
     if fmt in ("all", "csv"):
         outputs.append(reporter.write_csv(records))
-        if trend and trend_data:
-            outputs.append(reporter.write_trend_csv(trend_data))
+        for td in trend_datas:
+            outputs.append(reporter.write_trend_csv(td))
     if fmt in ("all", "json"):
         json_data = {
             "progress": progress,
             "groups": {k: [str(r.file_path) for r in v] for k, v in groups.items()},
         }
-        if trend_data:
-            json_data["trend"] = trend_data
+        if trend_datas:
+            json_data["trends"] = trend_datas
         outputs.append(reporter.write_json(json_data))
     if fmt in ("all", "markdown"):
         outputs.append(reporter.write_markdown(
-            progress, groups, trend=trend_data, trend_granularity=trend_granularity
+            progress, groups, trends=trend_datas
         ))
 
     if save_grading:
