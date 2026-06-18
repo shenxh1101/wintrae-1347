@@ -1,0 +1,25 @@
+template: "{date}_{class}_{student}_{piece}{comment}"
+
+output_dir: null
+
+ignore_patterns:
+  - "^\\."
+  - "__MACOSX"
+  - "Thumbs\\.db"
+  - "desktop\\.ini"
+  - "tmp"
+  - "temp"
+
+class_names:
+  - "钢琴一班"
+  - "钢琴二班"
+  - "小提琴A班"
+  - "小提琴B班"
+  - "初级班"
+  - "中级班"
+  - "高级班"
+
+min_duration_seconds: 10
+
+organize_by_class: true
+organize_by_student: true
