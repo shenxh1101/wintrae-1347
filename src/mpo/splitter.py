@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import re
 import shutil
 import zipfile
@@ -55,6 +56,8 @@ class Splitter:
             parts.append(record.student.klass)
         if record.student:
             parts.append(record.student.name)
+        if record.student and record.student.student_id:
+            parts.append(record.student.student_id)
         if record.piece:
             parts.append(record.piece)
         if record.rating:
@@ -166,7 +169,7 @@ class Splitter:
         self,
         records: list[AudioRecord],
         on_progress: Optional[Callable[[int, int, StudentInfo], None]] = None,
-    ) -> list[Path]:
+    ) -> list[tuple[Path, list[AudioRecord]]]:
         records = self.filter_by_date(records)
         groups: dict[StudentInfo, list[AudioRecord]] = defaultdict(list)
         for r in records:
@@ -176,11 +179,12 @@ class Splitter:
                 groups[StudentInfo(name="未识别")].append(r)
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        archives = []
+        archives: list[tuple[Path, list[AudioRecord]]] = []
         total = len(groups)
         for idx, (student, recs) in enumerate(groups.items(), 1):
             klass_part = student.klass + "_" if student.klass else ""
-            zip_name = f"{klass_part}{student.name}.zip"
+            sid_part = student.student_id + "_" if student.student_id else ""
+            zip_name = f"{klass_part}{sid_part}{student.name}.zip"
             zip_path = self._resolve_dup(self.output_dir / zip_name)
             try:
                 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -196,7 +200,7 @@ class Splitter:
                             record=r,
                             extra={"arcname": arcname},
                         )
-                archives.append(zip_path)
+                archives.append((zip_path, recs))
             except Exception as e:
                 self.log.record(
                     operation="pack",
@@ -208,6 +212,77 @@ class Splitter:
                 on_progress(idx, total, student)
 
         return archives
+
+    def write_pack_index(
+        self,
+        archives: list[tuple[Path, list[AudioRecord]]],
+        fmt: str = "markdown",
+    ) -> Path:
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        if fmt == "csv":
+            path = self.output_dir / "pack_index.csv"
+            with open(path, "w", newline="", encoding="utf-8-sig") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "zip包", "班级", "学生", "学号", "文件名", "日期", "曲目",
+                    "时长", "评级", "是否通过", "评语",
+                ])
+                for zip_path, recs in archives:
+                    for r in recs:
+                        passed = ""
+                        if r.passed is True:
+                            passed = "通过"
+                        elif r.passed is False:
+                            passed = "未通过"
+                        sid = r.student.student_id if r.student and r.student.student_id else ""
+                        writer.writerow([
+                            zip_path.name,
+                            r.student.klass if r.student else "",
+                            r.student.name if r.student else "",
+                            sid,
+                            self._build_filename(r),
+                            r.date_str,
+                            r.piece or "",
+                            r.duration_str,
+                            r.rating or "",
+                            passed,
+                            r.comment or "",
+                        ])
+            return path
+
+        path = self.output_dir / "pack_index.md"
+        lines = []
+        lines.append("# 作业提交索引")
+        lines.append("")
+        lines.append(f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append("")
+        lines.append(f"共 {len(archives)} 个 zip 包")
+        lines.append("")
+
+        for zip_path, recs in archives:
+            lines.append(f"## {zip_path.name}")
+            lines.append("")
+            if recs and recs[0].student:
+                lines.append(f"- 班级：{recs[0].student.klass or '-'}")
+                lines.append(f"- 学生：{recs[0].student.name or '-'}")
+                if recs[0].student.student_id:
+                    lines.append(f"- 学号：{recs[0].student.student_id}")
+            lines.append(f"- 文件数：{len(recs)}")
+            lines.append("")
+            lines.append("| 文件名 | 日期 | 曲目 | 时长 | 评级 | 是否通过 | 评语 |")
+            lines.append("|--------|------|------|------|------|----------|------|")
+            for r in recs:
+                passed = "✓" if r.passed else ("✗" if r.passed is False else "-")
+                lines.append(
+                    f"| {self._build_filename(r)} | {r.date_str} | "
+                    f"{r.piece or '-'} | {r.duration_str} | "
+                    f"{r.rating or '-'} | {passed} | {r.comment or '-'} |"
+                )
+            lines.append("")
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+        return path
 
     def add_comment_tag(
         self, record: AudioRecord, comment: str
@@ -253,7 +328,10 @@ class Splitter:
         parts = []
         if student.klass:
             parts.append(student.klass)
-        parts.append(student.name)
+        name_part = student.name
+        if student.student_id:
+            name_part = f"{student.name}_{student.student_id}"
+        parts.append(name_part)
         path = self.output_dir.joinpath(*parts)
         path.mkdir(parents=True, exist_ok=True)
         return path

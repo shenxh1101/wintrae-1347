@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import json
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -80,7 +80,10 @@ class Reporter:
             graded = sum(1 for r in recs if r.rating or r.passed is not None or r.comment)
             passed = sum(1 for r in recs if r.passed is True)
             ratings = sorted({r.rating for r in recs if r.rating})
-            student_stats[f"{student.klass or '未分班'}|{student.name}"] = {
+            stat_key = f"{student.klass or '未分班'}|{student.name}"
+            if student.student_id:
+                stat_key += f"|{student.student_id}"
+            student_stats[stat_key] = {
                 "klass": student.klass,
                 "name": student.name,
                 "student_id": student.student_id,
@@ -99,7 +102,7 @@ class Reporter:
         class_stats = {}
         for klass, recs in by_class.items():
             class_students = {
-                (r.student.klass or "", r.student.name)
+                self._student_key(r.student)
                 for r in recs if r.student
             }
             total_duration = sum(r.duration_seconds or 0 for r in recs)
@@ -165,6 +168,120 @@ class Reporter:
             "missing_by_class": dict(missing_by_class),
         }
 
+    def generate_trend_report(
+        self,
+        records: list[AudioRecord],
+        expected_students: Optional[list[StudentInfo]] = None,
+        granularity: str = "week",
+    ) -> dict:
+        if granularity not in ("week", "month"):
+            raise ValueError(f"不支持的时间粒度: {granularity}，请使用 week 或 month")
+
+        def period_key(d: datetime) -> str:
+            if granularity == "week":
+                start = d - timedelta(days=d.weekday())
+                return start.strftime("%Y-%m-%d") + "周"
+            return d.strftime("%Y-%m")
+
+        periods: dict[str, list[AudioRecord]] = defaultdict(list)
+        for r in records:
+            if r.practice_date:
+                periods[period_key(r.practice_date)].append(r)
+
+        sorted_periods = sorted(periods.keys())
+        if not sorted_periods:
+            return {"granularity": granularity, "periods": {}}
+
+        expected_by_class: dict[str, list[StudentInfo]] = defaultdict(list)
+        if expected_students:
+            for es in expected_students:
+                expected_by_class[es.klass or "未分班"].append(es)
+
+        period_stats: dict[str, dict] = {}
+        all_classes: set[str] = set()
+
+        for period, precs in periods.items():
+            by_student_in_period: dict[tuple, StudentInfo] = {}
+            by_class_in_period: dict[str, list[AudioRecord]] = defaultdict(list)
+            graded = 0
+            passed = 0
+
+            for r in precs:
+                if r.student:
+                    key = self._student_key(r.student)
+                    by_student_in_period[key] = r.student
+                    klass = r.student.klass or "未分班"
+                    by_class_in_period[klass].append(r)
+                    all_classes.add(klass)
+                if r.rating or r.passed is not None or r.comment:
+                    graded += 1
+                if r.passed is True:
+                    passed += 1
+
+            class_data: dict[str, dict] = {}
+            for klass in sorted(all_classes):
+                class_recs = by_class_in_period.get(klass, [])
+                class_submitted_students: set[tuple] = {
+                    self._student_key(r.student)
+                    for r in class_recs if r.student
+                }
+                class_expected = expected_by_class.get(klass, [])
+                class_submitted_count = len(class_submitted_students)
+                class_expected_count = len(class_expected)
+                class_missing = class_expected_count - class_submitted_count if class_expected_count > 0 else 0
+                class_graded = sum(1 for r in class_recs if r.rating or r.passed is not None or r.comment)
+                class_passed = sum(1 for r in class_recs if r.passed is True)
+                class_total = len(class_recs)
+                class_rate = round(class_submitted_count / class_expected_count * 100, 1) if class_expected_count > 0 else 0.0
+                class_pass_rate = round(class_passed / class_graded * 100, 1) if class_graded > 0 else 0.0
+
+                class_data[klass] = {
+                    "total_records": class_total,
+                    "submitted_students": class_submitted_count,
+                    "expected_students": class_expected_count,
+                    "missing_students": class_missing,
+                    "graded_count": class_graded,
+                    "passed_count": class_passed,
+                    "completion_rate": class_rate,
+                    "pass_rate": class_pass_rate,
+                }
+
+            period_stats[period] = {
+                "total_records": len(precs),
+                "submitted_students": len(by_student_in_period),
+                "graded_count": graded,
+                "passed_count": passed,
+                "class_data": class_data,
+            }
+
+        prev_period = None
+        for period in sorted_periods:
+            if prev_period and prev_period in period_stats:
+                cur = period_stats[period]
+                prev = period_stats[prev_period]
+                cur["compared_to_previous"] = {
+                    "records_delta": cur["total_records"] - prev["total_records"],
+                    "students_delta": cur["submitted_students"] - prev["submitted_students"],
+                    "graded_delta": cur["graded_count"] - prev["graded_count"],
+                    "passed_delta": cur["passed_count"] - prev["passed_count"],
+                }
+                for klass in cur["class_data"]:
+                    cd = cur["class_data"][klass]
+                    pd = prev["class_data"].get(klass, {})
+                    cd["compared_to_previous"] = {
+                        "submitted_delta": cd["submitted_students"] - pd.get("submitted_students", 0),
+                        "missing_delta": cd["missing_students"] - pd.get("missing_students", 0),
+                        "graded_delta": cd["graded_count"] - pd.get("graded_count", 0),
+                        "pass_rate_delta": round(cd["pass_rate"] - pd.get("pass_rate", 0), 1),
+                    }
+            prev_period = period
+
+        return {
+            "granularity": granularity,
+            "periods": dict(sorted(period_stats.items())),
+            "period_order": sorted_periods,
+        }
+
     def write_csv(
         self,
         records: list[AudioRecord],
@@ -223,11 +340,44 @@ class Reporter:
 
         return path
 
+    def write_trend_csv(
+        self,
+        trend: dict,
+        filename: str = "trend_summary.csv",
+    ) -> Path:
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        path = self.output_dir / filename
+
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "周期", "班级", "提交录音数", "提交人数", "应提交人数",
+                "缺交人数", "完成率", "已批改数", "通过数", "通过率",
+                "提交人数环比", "缺交人数环比", "通过率环比",
+            ])
+            for period in trend.get("period_order", []):
+                ps = trend["periods"][period]
+                for klass, cd in ps["class_data"].items():
+                    delta = cd.get("compared_to_previous", {})
+                    submit_delta = delta.get("submitted_delta", 0)
+                    missing_delta = delta.get("missing_delta", 0)
+                    pass_delta = delta.get("pass_rate_delta", 0)
+                    writer.writerow([
+                        period, klass,
+                        cd["total_records"], cd["submitted_students"], cd["expected_students"],
+                        cd["missing_students"], f"{cd['completion_rate']}%",
+                        cd["graded_count"], cd["passed_count"], f"{cd['pass_rate']}%",
+                        f"{submit_delta:+d}", f"{missing_delta:+d}", f"{pass_delta:+.1f}%",
+                    ])
+        return path
+
     def write_markdown(
         self,
         progress: dict,
         groups: dict,
         filename: str = "progress_report.md",
+        trend: Optional[dict] = None,
+        trend_granularity: str = "week",
     ) -> Path:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         path = self.output_dir / filename
@@ -266,6 +416,40 @@ class Reporter:
             )
         lines.append("")
 
+        if trend and trend.get("periods"):
+            period_label = "周" if trend_granularity == "week" else "月"
+            lines.append(f"## 按{period_label}趋势")
+            lines.append("")
+            for period in trend.get("period_order", []):
+                ps = trend["periods"][period]
+                lines.append(f"### {period_label}度：{period}")
+                lines.append("")
+                comp = ps.get("compared_to_previous")
+                if comp:
+                    lines.append(
+                        f"环比：录音数 {comp['records_delta']:+d}，"
+                        f"提交人数 {comp['students_delta']:+d}，"
+                        f"已批改 {comp['graded_delta']:+d}，"
+                        f"通过 {comp['passed_delta']:+d}"
+                    )
+                    lines.append("")
+                lines.append("| 班级 | 录音数 | 提交/应提交 | 完成率 | 已批改 | 通过数 | 通过率 | 缺交 | 环比 |")
+                lines.append("|------|--------|-------------|--------|--------|--------|--------|------|------|")
+                for klass, cd in ps["class_data"].items():
+                    delta = cd.get("compared_to_previous", {})
+                    submit_delta = delta.get("submitted_delta", 0)
+                    trend_str = f"提交{submit_delta:+d}"
+                    if "pass_rate_delta" in delta:
+                        trend_str += f" 通过率{delta['pass_rate_delta']:+.1f}%"
+                    lines.append(
+                        f"| {klass} | {cd['total_records']} | "
+                        f"{cd['submitted_students']}/{cd['expected_students']} | "
+                        f"{cd['completion_rate']}% | {cd['graded_count']} | "
+                        f"{cd['passed_count']} | {cd['pass_rate']}% | "
+                        f"{cd['missing_students']} | {trend_str} |"
+                    )
+                lines.append("")
+
         if progress["missing_students"]:
             lines.append("## 缺交名单（按班级）")
             lines.append("")
@@ -297,17 +481,18 @@ class Reporter:
 
         lines.append("## 学生统计（按班级排序）")
         lines.append("")
-        lines.append("| 班级 | 学生 | 提交次数 | 总时长(分钟) | 曲目数 | 最近提交 | 已批改 | 通过 | 评级 |")
-        lines.append("|------|------|----------|--------------|--------|----------|--------|------|------|")
+        lines.append("| 班级 | 学生 | 学号 | 提交次数 | 总时长(分钟) | 曲目数 | 最近提交 | 已批改 | 通过 | 评级 |")
+        lines.append("|------|------|------|----------|--------------|--------|----------|--------|------|------|")
         rows = sorted(
             progress["student_stats"].items(),
-            key=lambda kv: (kv[1]["klass"] or "", kv[1]["name"]),
+            key=lambda kv: (kv[1]["klass"] or "", kv[1]["name"], kv[1].get("student_id") or ""),
         )
         for _, s in rows:
             last = s["last_date"].strftime("%Y-%m-%d") if s["last_date"] else "-"
             ratings = ",".join(s["ratings"]) if s["ratings"] else "-"
+            sid = s.get("student_id") or "-"
             lines.append(
-                f"| {s['klass'] or '-'} | {s['name']} | {s['count']} | "
+                f"| {s['klass'] or '-'} | {s['name']} | {sid} | {s['count']} | "
                 f"{s['total_minutes']} | {len(s['pieces'])} | {last} | "
                 f"{s['graded_count']} | {s['passed_count']} | {ratings} |"
             )

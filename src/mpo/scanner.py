@@ -21,9 +21,12 @@ DATE_PATTERNS = [
 ]
 
 STUDENT_NAME_PATTERNS = [
+    re.compile(r"([\u4e00-\u9fa5][\u4e00-\u9fa5\s]{1,4}[\u4e00-\u9fa5])"),
     re.compile(r"([\u4e00-\u9fa5]{2,4})"),
     re.compile(r"([A-Za-z][A-Za-z\s]{1,20})"),
 ]
+
+STUDENT_ID_PATTERN = re.compile(r"(S\d{3,}|\d{6,})", re.IGNORECASE)
 
 PIECE_KEYWORDS = [
     "练习曲", "奏鸣曲", "协奏曲", "序曲", "圆舞曲", "夜曲",
@@ -134,13 +137,20 @@ class AudioScanner:
                     klass = cn
                     break
 
+        student_id = None
+        all_text = " ".join(list(parent_parts) + [file_path.stem])
+        id_match = STUDENT_ID_PATTERN.search(all_text)
+        if id_match:
+            student_id = id_match.group(1)
+
         for part in parts:
             if self._is_class_name(part):
                 continue
             for pattern in STUDENT_NAME_PATTERNS:
                 match = pattern.fullmatch(part)
                 if match and not self._piece_pattern.search(part):
-                    return StudentInfo(name=match.group(1), klass=klass)
+                    name = match.group(1).replace(" ", "")
+                    return StudentInfo(name=name, klass=klass, student_id=student_id)
 
         for part in parent_parts:
             if self._is_class_name(part):
@@ -148,7 +158,8 @@ class AudioScanner:
             for pattern in STUDENT_NAME_PATTERNS:
                 match = pattern.fullmatch(part)
                 if match and not self._piece_pattern.search(part):
-                    return StudentInfo(name=match.group(1), klass=klass)
+                    name = match.group(1).replace(" ", "")
+                    return StudentInfo(name=name, klass=klass, student_id=student_id)
 
         return None
 

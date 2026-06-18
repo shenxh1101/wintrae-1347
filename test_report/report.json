@@ -1,0 +1,247 @@
+{
+  "progress": {
+    "generated_at": "2026-06-19T07:18:17",
+    "total_records": 20,
+    "total_students": 5,
+    "total_pieces": 2,
+    "total_classes": 2,
+    "graded_total": 11,
+    "passed_total": 11,
+    "date_range": {
+      "start": "2025-06-15",
+      "end": "2025-06-16"
+    },
+    "student_stats": {
+      "钢琴一班|张三|S001": {
+        "klass": "钢琴一班",
+        "name": "张三",
+        "student_id": "S001",
+        "count": 4,
+        "total_minutes": 5.4,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "last_date": "2025-06-16T00:00:00",
+        "graded_count": 2,
+        "passed_count": 2,
+        "ratings": [
+          "优"
+        ]
+      },
+      "钢琴一班|张三|S002": {
+        "klass": "钢琴一班",
+        "name": "张三",
+        "student_id": "S002",
+        "count": 4,
+        "total_minutes": 5.3,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "last_date": "2025-06-16T00:00:00",
+        "graded_count": 2,
+        "passed_count": 2,
+        "ratings": [
+          "优"
+        ]
+      },
+      "钢琴一班|李四|S003": {
+        "klass": "钢琴一班",
+        "name": "李四",
+        "student_id": "S003",
+        "count": 4,
+        "total_minutes": 5.7,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "last_date": "2025-06-16T00:00:00",
+        "graded_count": 2,
+        "passed_count": 2,
+        "ratings": [
+          "优"
+        ]
+      },
+      "钢琴二班|张三|S004": {
+        "klass": "钢琴二班",
+        "name": "张三",
+        "student_id": "S004",
+        "count": 4,
+        "total_minutes": 6.0,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "last_date": "2025-06-16T00:00:00",
+        "graded_count": 2,
+        "passed_count": 2,
+        "ratings": [
+          "优"
+        ]
+      },
+      "钢琴二班|王五|S005": {
+        "klass": "钢琴二班",
+        "name": "王五",
+        "student_id": "S005",
+        "count": 4,
+        "total_minutes": 5.8,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "last_date": "2025-06-16T00:00:00",
+        "graded_count": 3,
+        "passed_count": 3,
+        "ratings": [
+          "优"
+        ]
+      }
+    },
+    "class_stats": {
+      "钢琴一班": {
+        "total_records": 12,
+        "student_count": 3,
+        "total_minutes": 16.4,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "graded_count": 6,
+        "passed_count": 6,
+        "completion_rate": 100.0,
+        "expected_count": 3,
+        "missing_count": 0
+      },
+      "钢琴二班": {
+        "total_records": 8,
+        "student_count": 2,
+        "total_minutes": 11.8,
+        "pieces": [
+          "奏鸣曲",
+          "练习曲"
+        ],
+        "graded_count": 5,
+        "passed_count": 5,
+        "completion_rate": 100.0,
+        "expected_count": 2,
+        "missing_count": 0
+      }
+    },
+    "pieces": [
+      "奏鸣曲",
+      "练习曲"
+    ],
+    "missing_students": [],
+    "missing_by_class": {}
+  },
+  "groups": {
+    "钢琴一班": [
+      "test_data\\钢琴一班\\张三_S001\\2025-06-15_张三_奏鸣曲.wav",
+      "test_data\\钢琴一班\\张三_S001\\2025-06-15_张三_练习曲.wav",
+      "test_data\\钢琴一班\\张三_S002\\2025-06-15_张三_奏鸣曲.wav",
+      "test_data\\钢琴一班\\张三_S002\\2025-06-15_张三_练习曲.wav",
+      "test_data\\钢琴一班\\张三_S001\\2025-06-16_张三_奏鸣曲.wav",
+      "test_data\\钢琴一班\\张三_S001\\2025-06-16_张三_练习曲.wav",
+      "test_data\\钢琴一班\\张三_S002\\2025-06-16_张三_奏鸣曲.wav",
+      "test_data\\钢琴一班\\张三_S002\\2025-06-16_张三_练习曲.wav",
+      "test_data\\钢琴一班\\李四_S003\\2025-06-15_李四_奏鸣曲.wav",
+      "test_data\\钢琴一班\\李四_S003\\2025-06-15_李四_练习曲.wav",
+      "test_data\\钢琴一班\\李四_S003\\2025-06-16_李四_奏鸣曲.wav",
+      "test_data\\钢琴一班\\李四_S003\\2025-06-16_李四_练习曲.wav"
+    ],
+    "钢琴二班": [
+      "test_data\\钢琴二班\\张三_S004\\2025-06-15_张三_奏鸣曲.wav",
+      "test_data\\钢琴二班\\张三_S004\\2025-06-15_张三_练习曲.wav",
+      "test_data\\钢琴二班\\张三_S004\\2025-06-16_张三_奏鸣曲.wav",
+      "test_data\\钢琴二班\\张三_S004\\2025-06-16_张三_练习曲.wav",
+      "test_data\\钢琴二班\\王五_S005\\2025-06-15_王五_奏鸣曲.wav",
+      "test_data\\钢琴二班\\王五_S005\\2025-06-15_王五_练习曲.wav",
+      "test_data\\钢琴二班\\王五_S005\\2025-06-16_王五_奏鸣曲.wav",
+      "test_data\\钢琴二班\\王五_S005\\2025-06-16_王五_练习曲.wav"
+    ]
+  },
+  "trend": {
+    "granularity": "week",
+    "periods": {
+      "2025-06-09周": {
+        "total_records": 10,
+        "submitted_students": 5,
+        "graded_count": 10,
+        "passed_count": 10,
+        "class_data": {
+          "钢琴一班": {
+            "total_records": 6,
+            "submitted_students": 3,
+            "expected_students": 3,
+            "missing_students": 0,
+            "graded_count": 6,
+            "passed_count": 6,
+            "completion_rate": 100.0,
+            "pass_rate": 100.0
+          },
+          "钢琴二班": {
+            "total_records": 4,
+            "submitted_students": 2,
+            "expected_students": 2,
+            "missing_students": 0,
+            "graded_count": 4,
+            "passed_count": 4,
+            "completion_rate": 100.0,
+            "pass_rate": 100.0
+          }
+        }
+      },
+      "2025-06-16周": {
+        "total_records": 10,
+        "submitted_students": 5,
+        "graded_count": 1,
+        "passed_count": 1,
+        "class_data": {
+          "钢琴一班": {
+            "total_records": 6,
+            "submitted_students": 3,
+            "expected_students": 3,
+            "missing_students": 0,
+            "graded_count": 0,
+            "passed_count": 0,
+            "completion_rate": 100.0,
+            "pass_rate": 0.0,
+            "compared_to_previous": {
+              "submitted_delta": 0,
+              "missing_delta": 0,
+              "graded_delta": -6,
+              "pass_rate_delta": -100.0
+            }
+          },
+          "钢琴二班": {
+            "total_records": 4,
+            "submitted_students": 2,
+            "expected_students": 2,
+            "missing_students": 0,
+            "graded_count": 1,
+            "passed_count": 1,
+            "completion_rate": 100.0,
+            "pass_rate": 100.0,
+            "compared_to_previous": {
+              "submitted_delta": 0,
+              "missing_delta": 0,
+              "graded_delta": -3,
+              "pass_rate_delta": 0.0
+            }
+          }
+        },
+        "compared_to_previous": {
+          "records_delta": 0,
+          "students_delta": 0,
+          "graded_delta": -9,
+          "passed_delta": -9
+        }
+      }
+    },
+    "period_order": [
+      "2025-06-09周",
+      "2025-06-16周"
+    ]
+  }
+}

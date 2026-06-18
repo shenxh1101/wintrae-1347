@@ -74,6 +74,7 @@ def _do_scan(
     config: Config,
     grading_store: GradingStore | None = None,
     load_grading: bool = True,
+    quiet: bool = False,
 ) -> tuple[AudioScanner, list[AudioRecord]]:
     ignore_patterns = list(config.ignore_patterns) + list(ignore)
     class_names = list(config.class_names) + list(class_name)
@@ -82,12 +83,13 @@ def _do_scan(
         class_names=class_names,
     )
     result = scanner.scan_directory(directory, recursive=not no_recursive)
-    console.print(f"[green]✓[/green] 扫描完成：找到 {result.total_count} 个音频文件"
-                  + (f"，跳过 {result.skipped_count} 个" if result.skipped_count else ""))
+    if not quiet:
+        console.print(f"[green]✓[/green] 扫描完成：找到 {result.total_count} 个音频文件"
+                      + (f"，跳过 {result.skipped_count} 个" if result.skipped_count else ""))
 
     if grading_store and load_grading and grading_store.count:
         applied = grading_store.apply_to_records(result.records)
-        if applied:
+        if applied and not quiet:
             console.print(f"[cyan]ℹ[/cyan] 已加载 {applied} 条批改记录")
 
     return scanner, result.records
@@ -112,6 +114,7 @@ def scan_cmd(
     _, records = _do_scan(
         directory, no_recursive, ignore, class_name, config,
         grading_store=store, load_grading=not no_load_grading,
+        quiet=as_json,
     )
 
     if as_json:
@@ -321,6 +324,9 @@ def check_cmd(
               help="学生名单文件，用于标记缺交")
 @click.option("--format", "fmt", type=click.Choice(["all", "csv", "json", "markdown"]),
               default="all", show_default=True, help="输出格式")
+@click.option("--trend/--no-trend", default=False, help="是否生成周/月趋势报告")
+@click.option("--trend-granularity", type=click.Choice(["week", "month"]),
+              default="week", show_default=True, help="趋势统计粒度")
 @click.option("--save-grading", is_flag=True, help="将本次识别/批改信息保存到批改记录文件")
 @click.pass_context
 def report_cmd(
@@ -334,9 +340,11 @@ def report_cmd(
     group_by: str,
     students_file: Path | None,
     fmt: str,
+    trend: bool,
+    trend_granularity: str,
     save_grading: bool,
 ) -> None:
-    """生成班级练习清单、进度报告"""
+    """生成班级练习清单、进度报告（支持周/月趋势）"""
     config = ctx.obj["config"]
     store = ctx.obj["grading_store"]
     _, records = _do_scan(
@@ -353,16 +361,29 @@ def report_cmd(
     groups = reporter.generate_practice_list(records, group_by=group_by)
     progress = reporter.generate_progress_report(records, expected_students)
 
+    trend_data = None
+    if trend:
+        trend_data = reporter.generate_trend_report(
+            records, expected_students, granularity=trend_granularity
+        )
+
     outputs = []
     if fmt in ("all", "csv"):
         outputs.append(reporter.write_csv(records))
+        if trend and trend_data:
+            outputs.append(reporter.write_trend_csv(trend_data))
     if fmt in ("all", "json"):
-        outputs.append(reporter.write_json({
+        json_data = {
             "progress": progress,
             "groups": {k: [str(r.file_path) for r in v] for k, v in groups.items()},
-        }))
+        }
+        if trend_data:
+            json_data["trend"] = trend_data
+        outputs.append(reporter.write_json(json_data))
     if fmt in ("all", "markdown"):
-        outputs.append(reporter.write_markdown(progress, groups))
+        outputs.append(reporter.write_markdown(
+            progress, groups, trend=trend_data, trend_granularity=trend_granularity
+        ))
 
     if save_grading:
         collected = store.collect_from_records(records)
@@ -459,6 +480,45 @@ def grade_cmd(
         console.print(f"[cyan]ℹ[/cyan] 批改记录已保存到 {saved_path}（共 {collected} 条）")
 
 
+@cli.command("grade-export")
+@click.option("-o", "--output", required=True, type=click.Path(path_type=Path),
+              help="导出目录")
+@click.option("--student", type=str, help="仅导出指定学生（姓名）")
+@click.option("--klass", type=str, help="仅导出指定班级")
+@click.option("--format", "fmt", type=click.Choice(["csv", "json"]),
+              default="csv", show_default=True, help="导出格式")
+@click.option("-g", "--grading-file", type=click.Path(path_type=Path),
+              help="批改记录文件 (JSON)，默认 ./grading_records.json")
+@click.pass_context
+def grade_export_cmd(
+    ctx: click.Context,
+    output: Path,
+    student: str | None,
+    klass: str | None,
+    fmt: str,
+    grading_file: Path | None,
+) -> None:
+    """导出批改历史记录（可按学生或班级筛选）"""
+    if grading_file:
+        store = GradingStore(grading_file)
+    else:
+        store = ctx.obj["grading_store"]
+
+    if store.count == 0:
+        console.print("[yellow]⚠[/yellow] 没有批改记录可导出")
+        return
+
+    path = store.export_history(
+        output_dir=output,
+        student=student,
+        klass=klass,
+        fmt=fmt,
+    )
+    console.print(
+        f"[green]✓[/green] 已导出 {store.count} 条批改记录到 {path}"
+    )
+
+
 @cli.command("split")
 @_common_scan_options
 @click.option("-o", "--output", required=True, type=click.Path(path_type=Path),
@@ -510,9 +570,18 @@ def split_cmd(
         date_range = (sd, ed)
         console.print(f"[cyan]ℹ[/cyan] 日期筛选：{sd.strftime('%Y-%m-%d')} ~ {ed.strftime('%Y-%m-%d')}")
 
+    filtered_records = records
+    if date_range:
+        start, end = date_range
+        filtered_records = [
+            r for r in records
+            if r.practice_date and start <= r.practice_date <= end
+        ]
+        console.print(f"[cyan]ℹ[/cyan] 日期范围内的音频：{len(filtered_records)} 个（共 {len(records)} 个）")
+
     changed = 0
     if comment:
-        for r in records:
+        for r in filtered_records:
             if r.comment:
                 r.comment = f"{r.comment}_{comment}"
             else:
@@ -521,7 +590,7 @@ def split_cmd(
         console.print(f"[cyan]ℹ[/cyan] 已追加评语标签：{comment}（{changed} 个）")
 
     if rating or passed is not None:
-        for r in records:
+        for r in filtered_records:
             if rating:
                 r.rating = rating
             if passed is not None:
@@ -534,7 +603,7 @@ def split_cmd(
         )
 
     if save_grading and (comment or rating or passed is not None):
-        collected = store.collect_from_records(records)
+        collected = store.collect_from_records(filtered_records)
         saved_path = store.save()
         console.print(f"[cyan]ℹ[/cyan] 批改记录已保存到 {saved_path}（共 {collected} 条）")
 
@@ -565,10 +634,18 @@ def split_cmd(
         def on_progress(idx, total, student):
             console.print(f"  [{idx}/{total}] 打包 {student.name}")
 
-        archives = splitter.pack_by_student(records, on_progress=on_progress)
-        console.print(f"\n[green]✓[/green] 完成：已生成 {len(archives)} 个 zip 包到 {output}")
-        for a in archives:
+        archives_with_records = splitter.pack_by_student(records, on_progress=on_progress)
+        archive_paths = [a[0] for a in archives_with_records]
+        console.print(f"\n[green]✓[/green] 完成：已生成 {len(archive_paths)} 个 zip 包到 {output}")
+        for a in archive_paths:
             console.print(f"  - {a.name}")
+
+        if archives_with_records:
+            md_idx = splitter.write_pack_index(archives_with_records, fmt="markdown")
+            csv_idx = splitter.write_pack_index(archives_with_records, fmt="csv")
+            console.print(f"\n[cyan]ℹ[/cyan] 作业索引已生成：")
+            console.print(f"  - {md_idx}")
+            console.print(f"  - {csv_idx}")
 
     log_dir = Path(log_output) if log_output else Path(output)
     log_path = op_log.write_csv(log_dir, filename=f"split_{mode}_operation_log.csv")

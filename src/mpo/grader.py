@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from collections import defaultdict
 from datetime import datetime
@@ -94,7 +95,13 @@ class GradingStore:
                         or not r.student
                         or cand["student"] == r.student.name
                     )
-                    if klass_match and name_match:
+                    student_id_match = (
+                        not cand.get("student_id")
+                        or not r.student
+                        or not r.student.student_id
+                        or cand["student_id"] == r.student.student_id
+                    )
+                    if klass_match and name_match and student_id_match:
                         data = cand
                         break
             if data:
@@ -109,6 +116,8 @@ class GradingStore:
                         r.graded_at = datetime.fromisoformat(data["graded_at"])
                     except ValueError:
                         pass
+                if r.student and data.get("student_id") and not r.student.student_id:
+                    r.student = r.student._replace(student_id=data["student_id"])
                 count += 1
         return count
 
@@ -124,6 +133,7 @@ class GradingStore:
                 passed=r.passed,
                 file_hash=r.file_hash,
                 student=r.student.name if r.student else None,
+                student_id=r.student.student_id if r.student else None,
                 klass=r.student.klass if r.student else None,
                 piece=r.piece,
                 practice_date=r.date_str,
@@ -135,6 +145,101 @@ class GradingStore:
     @property
     def count(self) -> int:
         return len(self._records)
+
+    def export_history(
+        self,
+        output_dir: Path,
+        student: Optional[str] = None,
+        klass: Optional[str] = None,
+        fmt: str = "csv",
+    ) -> Path:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        records = []
+        for key, v in self._records.items():
+            if student and v.get("student") != student:
+                continue
+            if klass and v.get("klass") != klass:
+                continue
+            records.append((key, v))
+
+        records.sort(key=lambda kv: (
+            kv[1].get("klass", ""),
+            kv[1].get("student", ""),
+            kv[1].get("practice_date", ""),
+            kv[1].get("graded_at", ""),
+        ))
+
+        if fmt == "json":
+            filename = "grading_history"
+            if klass:
+                filename += f"_{klass}"
+            if student:
+                filename += f"_{student}"
+            filename += ".json"
+            path = output_dir / filename
+            data = {
+                "exported_at": datetime.now().isoformat(timespec="seconds"),
+                "filter": {"student": student, "klass": klass},
+                "count": len(records),
+                "records": [
+                    {
+                        "key": key,
+                        "student": v.get("student"),
+                        "student_id": v.get("student_id"),
+                        "klass": v.get("klass"),
+                        "piece": v.get("piece"),
+                        "practice_date": v.get("practice_date"),
+                        "comment": v.get("comment"),
+                        "rating": v.get("rating"),
+                        "passed": v.get("passed"),
+                        "graded_at": v.get("graded_at"),
+                        "source_file": v.get("source_file"),
+                        "file_hash": v.get("file_hash"),
+                    }
+                    for key, v in records
+                ],
+            }
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            return path
+
+        filename = "grading_history"
+        if klass:
+            filename += f"_{klass}"
+        if student:
+            filename += f"_{student}"
+        filename += ".csv"
+        path = output_dir / filename
+
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "班级", "学生", "学号", "练习日期", "曲目",
+                "评语", "评级", "是否通过", "批改时间",
+                "源文件", "文件哈希",
+            ])
+            for key, v in records:
+                passed = ""
+                if v.get("passed") is True:
+                    passed = "通过"
+                elif v.get("passed") is False:
+                    passed = "未通过"
+                writer.writerow([
+                    v.get("klass", ""),
+                    v.get("student", ""),
+                    v.get("student_id", ""),
+                    v.get("practice_date", ""),
+                    v.get("piece", ""),
+                    v.get("comment", ""),
+                    v.get("rating", ""),
+                    passed,
+                    v.get("graded_at", ""),
+                    v.get("source_file", ""),
+                    v.get("file_hash", "")[:16] if v.get("file_hash") else "",
+                ])
+        return path
 
     def __len__(self) -> int:
         return self.count
